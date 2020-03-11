@@ -31,12 +31,17 @@ include_directories(
   include
 )
 
-add_library(${PROJECT_NAME} SHARED src/qualisys_driver.cpp)
+add_library(${PROJECT_NAME} STATIC src/qualisys_driver.cpp)
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+
+ADD_LIBRARY(qualisys_cpp_sdk STATIC IMPORTED)
+SET_TARGET_PROPERTIES(qualisys_cpp_sdk PROPERTIES
+    IMPORTED_LOCATION /usr/lib/libqualisys_cpp_sdk.a)
 
 add_executable(qualisys_driver_main
   src/qualisys_driver_main.cpp
 )
+
 ament_target_dependencies(qualisys_driver_main ${dependencies})
 target_link_libraries(qualisys_driver_main
   ${PROJECT_NAME}
