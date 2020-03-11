@@ -51,10 +51,7 @@ void QualisysDriver::start_qualisys()
           RCLCPP_WARN(get_logger(), "No more data");
           break;
         case CRTPacket::PacketData:
-          if (publish_markers_)
-          {
-            process_packet(prt_packet);
-          }
+          process_packet(prt_packet);
           break;
         default:
           RCLCPP_ERROR(get_logger(), "Unknown CRTPacket");
@@ -72,6 +69,24 @@ void QualisysDriver::process_packet(CRTPacket* const packet)
   mocap4ros_msgs::msg::Markers markers_msg;
   markers_msg.header.stamp = rclcpp::Clock().now();
   markers_msg.frame_number = packet->GetFrameNumber();
+
+  int frame_diff = 0;
+  if (last_frame_number_ != 0)
+  {
+    frame_diff = markers_msg.frame_number - last_frame_number_;
+    frame_count_ += frame_diff;
+    if (frame_diff > 1)
+    {
+      dropped_frame_count_ += frame_diff;
+      double dropped_frame_pct = static_cast<double>(dropped_frame_count_ / frame_count_ * 100);
+
+      RCLCPP_DEBUG(get_logger(), 
+        "%d more (total %d / %d, %f %%) frame(s) dropped. Consider adjusting rates",
+        frame_diff, dropped_frame_count_, frame_count_, dropped_frame_pct
+      );
+    }
+  }
+  last_frame_number_ = markers_msg.frame_number;
 
   for (unsigned int i = 0; i < marker_count; ++i)
   {
@@ -137,7 +152,7 @@ CallbackReturnT QualisysDriver::on_configure(const rclcpp_lifecycle::State & sta
     "/qualisys_driver/change_state");
 
   marker_pub_ = create_publisher<mocap4ros_msgs::msg::Markers>(
-    tracked_frame_suffix_ + "/markers", 100);
+    "/markers", 100);
 
   update_pub_ = create_publisher<std_msgs::msg::Empty>(
     "/qualisys_driver/update_notify", qos);
@@ -210,9 +225,9 @@ CallbackReturnT QualisysDriver::on_error(const rclcpp_lifecycle::State & state)
 
 bool QualisysDriver::connect_qualisys()
 {
-  RCLCPP_WARN(get_logger(), "Trying to connect to Qualisys host at %s:%d", host_name_.c_str(), host_port_);
+  RCLCPP_WARN(get_logger(), "Trying to connect to Qualisys host at %s:%d", host_name_.c_str(), port_);
 
-  if(!port_protocol_.Connect((char *)host_name_.data(), host_port_, 0, 1, 7)) {
+  if(!port_protocol_.Connect((char *)host_name_.data(), port_, 0, 1, 7)) {
     RCLCPP_FATAL(get_logger(), "Connection error");
     return false;
   }
@@ -229,33 +244,19 @@ bool QualisysDriver::connect_qualisys()
 void QualisysDriver::initParameters()
 {
   declare_parameter<std::string>("host_name", "mocap");
-  declare_parameter<int>("host_port", 22222);
-  declare_parameter<std::string>("tf_ref_frame_id", "qualisys_world");
-  declare_parameter<std::string>("tracked_frame_suffix", "qualisys");
-  declare_parameter<bool>("publish_markers", false);
-  declare_parameter<bool>("marker_data_enabled", false);
-  declare_parameter<bool>("unlabeled_marker_data_enabled", false);
+  declare_parameter<int>("port", 22222);
   declare_parameter<int>("last_frame_number", 0);
   declare_parameter<int>("frame_count", 0);
   declare_parameter<int>("dropped_frame_count", 0);
-  declare_parameter<int>("n_markers", 0);
-  declare_parameter<int>("n_unlabeled_markers", 0);
   declare_parameter<std::string>("qos_history_policy", "keep_all");
   declare_parameter<std::string>("qos_reliability_policy", "best_effort");
   declare_parameter<int>("qos_depth", 10);
 
   get_parameter<std::string>("host_name", host_name_);
-  get_parameter<int>("host_port", host_port_);
-  get_parameter<std::string>("tf_ref_frame_id", tf_ref_frame_id_);
-  get_parameter<std::string>("tracked_frame_suffix", tracked_frame_suffix_);
-  get_parameter<bool>("publish_markers", publish_markers_);
-  get_parameter<bool>("marker_data_enabled", marker_data_enabled_);
-  get_parameter<bool>("unlabeled_marker_data_enabled", unlabeled_marker_data_enabled_);
+  get_parameter<int>("port", port_);
   get_parameter<int>("last_frame_number", last_frame_number_);
   get_parameter<int>("frame_count", frame_count_);
   get_parameter<int>("dropped_frame_count", dropped_frame_count_);
-  get_parameter<int>("n_markers", n_markers_);
-  get_parameter<int>("n_unlabeled_markers", n_unlabeled_markers_);
   get_parameter<std::string>("qos_history_policy", qos_history_policy_);
   get_parameter<std::string>("qos_reliability_policy", qos_reliability_policy_);
   get_parameter<int>("qos_depth", qos_depth_);
@@ -263,25 +264,13 @@ void QualisysDriver::initParameters()
   RCLCPP_WARN(get_logger(),
     "Param host_name: %s", host_name_.c_str());
   RCLCPP_WARN(get_logger(),
-    "Param tf_ref_frame_id: %s", tf_ref_frame_id_.c_str());
+    "Param port: %s", port_);
   RCLCPP_WARN(get_logger(),
-    "Param tracked_frame_suffix: %s", tracked_frame_suffix_.c_str());
-  RCLCPP_WARN(get_logger(),
-    "Param publish_markers: %s", publish_markers_?"true":"false");
-  RCLCPP_WARN(get_logger(),
-    "Param marker_data_enabled: %s", marker_data_enabled_?"true":"false");
-  RCLCPP_WARN(get_logger(),
-    "Param unlabeled_marker_data_enabled: %s", unlabeled_marker_data_enabled_?"true":"false");
-  RCLCPP_WARN(get_logger(),
-    "Param last_frame_number: %d", last_frame_number_);
+    "Param last_frame_number: %s", last_frame_number_);
   RCLCPP_WARN(get_logger(),
     "Param frame_count: %d", frame_count_);
   RCLCPP_WARN(get_logger(),
     "Param dropped_frame_count: %d", dropped_frame_count_);
-  RCLCPP_WARN(get_logger(),
-    "Param n_markers: %d", n_markers_);
-  RCLCPP_WARN(get_logger(),
-    "Param n_unlabeled_markers: %d", n_unlabeled_markers_);
   RCLCPP_WARN(get_logger(),
     "Param qos_history_policy: %s", qos_history_policy_.c_str());
   RCLCPP_WARN(get_logger(),
