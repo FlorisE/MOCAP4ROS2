@@ -66,14 +66,12 @@ void QualisysDriver::start_qualisys()
 void QualisysDriver::process_packet(CRTPacket* const packet)
 {
   unsigned int marker_count = packet->Get3DNoLabelsMarkerCount();
-  mocap4ros_msgs::msg::Markers markers_msg;
-  markers_msg.header.stamp = rclcpp::Clock().now();
-  markers_msg.frame_number = packet->GetFrameNumber();
+  int frame_number = packet->GetFrameNumber();
 
   int frame_diff = 0;
   if (last_frame_number_ != 0)
   {
-    frame_diff = markers_msg.frame_number - last_frame_number_;
+    frame_diff = frame_number - last_frame_number_;
     frame_count_ += frame_diff;
     if (frame_diff > 1)
     {
@@ -86,21 +84,48 @@ void QualisysDriver::process_packet(CRTPacket* const packet)
       );
     }
   }
-  last_frame_number_ = markers_msg.frame_number;
+  last_frame_number_ = frame_number;
 
-  for (unsigned int i = 0; i < marker_count; ++i)
+  if (use_markers_with_id_)
   {
-    float x, y, z;
-    unsigned int id;
-    packet->Get3DNoLabelsMarker(i, x, y, z, id);
-    mocap4ros_msgs::msg::Marker this_marker;
-    this_marker.translation.x = x/1000;
-    this_marker.translation.y = y/1000;
-    this_marker.translation.z = z/1000;
-    markers_msg.markers.push_back( this_marker );
-  }
+    mocap4ros_msgs::msg::MarkersWithId markers_msg;
+    markers_msg.header.stamp = rclcpp::Clock().now();
+    markers_msg.frame_number = frame_number;
 
-  marker_pub_->publish( markers_msg );
+    for (unsigned int i = 0; i < marker_count; ++i)
+    {
+      float x, y, z;
+      unsigned int id;
+      packet->Get3DNoLabelsMarker(i, x, y, z, id);
+      mocap4ros_msgs::msg::MarkerWithId this_marker;
+      this_marker.translation.x = x/1000;
+      this_marker.translation.y = y/1000;
+      this_marker.translation.z = z/1000;
+      markers_msg.markers.push_back( this_marker );
+    }
+
+    marker_with_id_pub_->publish( markers_msg );
+  }
+  else
+  {
+    mocap4ros_msgs::msg::Markers markers_msg;
+    markers_msg.header.stamp = rclcpp::Clock().now();
+    markers_msg.frame_number = frame_number;
+
+    for (unsigned int i = 0; i < marker_count; ++i)
+    {
+      float x, y, z;
+      unsigned int id;
+      packet->Get3DNoLabelsMarker(i, x, y, z, id);
+      mocap4ros_msgs::msg::Marker this_marker;
+      this_marker.translation.x = x/1000;
+      this_marker.translation.y = y/1000;
+      this_marker.translation.z = z/1000;
+      markers_msg.markers.push_back( this_marker );
+    }
+
+    marker_pub_->publish( markers_msg );
+  }
 
   return;
 }
@@ -153,6 +178,9 @@ CallbackReturnT QualisysDriver::on_configure(const rclcpp_lifecycle::State & sta
 
   marker_pub_ = create_publisher<mocap4ros_msgs::msg::Markers>(
     "/markers", 100);
+
+  marker_with_id_pub_ = create_publisher<mocap4ros_msgs::msg::MarkersWithId>(
+    "/markers_with_id", 100);
 
   update_pub_ = create_publisher<std_msgs::msg::Empty>(
     "/qualisys_driver/update_notify", qos);
@@ -251,6 +279,7 @@ void QualisysDriver::initParameters()
   declare_parameter<std::string>("qos_history_policy", "keep_all");
   declare_parameter<std::string>("qos_reliability_policy", "best_effort");
   declare_parameter<int>("qos_depth", 10);
+  declare_parameter<bool>("use_markers_with_id", true);
 
   get_parameter<std::string>("host_name", host_name_);
   get_parameter<int>("port", port_);
@@ -260,6 +289,7 @@ void QualisysDriver::initParameters()
   get_parameter<std::string>("qos_history_policy", qos_history_policy_);
   get_parameter<std::string>("qos_reliability_policy", qos_reliability_policy_);
   get_parameter<int>("qos_depth", qos_depth_);
+  get_parameter<bool>("use_markers_with_id", use_markers_with_id_);
 
   RCLCPP_WARN(get_logger(),
     "Param host_name: %s", host_name_.c_str());
@@ -277,4 +307,6 @@ void QualisysDriver::initParameters()
     "Param qos_reliability_policy: %s", qos_reliability_policy_.c_str());
   RCLCPP_WARN(get_logger(),
     "Param qos_depth: %d", qos_depth_);
+  RCLCPP_WARN(get_logger(),
+    "Param use_markers_with_id: %s", use_markers_with_id_ ? "true" : "false");
 }

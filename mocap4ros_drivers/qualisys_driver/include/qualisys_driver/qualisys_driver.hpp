@@ -39,6 +39,8 @@
 
 #include "mocap4ros_msgs/msg/marker.hpp"
 #include "mocap4ros_msgs/msg/markers.hpp"
+#include "mocap4ros_msgs/msg/marker_with_id.hpp"
+#include "mocap4ros_msgs/msg/markers_with_id.hpp"
 
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -79,16 +81,12 @@ class QualisysDriver : public rclcpp_lifecycle::LifecycleNode
     void process_packet(CRTPacket* const);
     CRTProtocol port_protocol_;
     std::string host_name_;
-    int host_port_;
-    std::string tf_ref_frame_id_;
-    std::string tracked_frame_suffix_;
+    int port_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     std::string qos_history_policy_;
     std::string qos_reliability_policy_;
     int qos_depth_;
-    bool publish_markers_;
-    bool marker_data_enabled_;
-    bool unlabeled_marker_data_enabled_;
+    bool use_markers_with_id_;
     int last_frame_number_;
     int frame_count_;
     int dropped_frame_count_;
@@ -96,6 +94,7 @@ class QualisysDriver : public rclcpp_lifecycle::LifecycleNode
     int n_unlabeled_markers_;
     std::shared_ptr<rclcpp::Client<lifecycle_msgs::srv::ChangeState>> client_change_state_;
     rclcpp_lifecycle::LifecyclePublisher<mocap4ros_msgs::msg::Markers>::SharedPtr marker_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<mocap4ros_msgs::msg::MarkersWithId>::SharedPtr marker_with_id_pub_;
     rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Empty>::SharedPtr update_pub_;
 };
 
