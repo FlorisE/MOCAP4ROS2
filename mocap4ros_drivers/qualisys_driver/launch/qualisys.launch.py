@@ -81,6 +81,6 @@ def generate_launch_description():
     ld.add_action(stdout_linebuf_envvar)
     ld.add_action(driver_node)
     ld.add_action(driver_configure_trans_event)
-    # ld.add_action(driver_activate_trans_event)
+    ld.add_action(driver_activate_trans_event)
 
     return ld

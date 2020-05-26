@@ -73,11 +73,12 @@ class QualisysDriver : public rclcpp_lifecycle::LifecycleNode
     CallbackReturnT on_error(const rclcpp_lifecycle::State& state);
     bool connect_qualisys();
     void set_settings_qualisys();
-    void start_qualisys();
+    void loop();
     bool stop_qualisys();
     void initParameters();
 
   private:
+    std::shared_ptr<rclcpp::TimerBase> timer_;
     void process_packet(CRTPacket* const);
     CRTProtocol port_protocol_;
     std::string host_name_;
