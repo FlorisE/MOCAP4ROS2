@@ -17,8 +17,9 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <vicon2_driver/vicon2_driver.hpp>
-#include <lifecycle_msgs/msg/state.hpp>
+
+#include "vicon2_driver/vicon2_driver.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 using std::min;
 using std::max;
@@ -94,7 +95,27 @@ string Enum2String(const ViconDataStreamSDK::CPP::Result::Enum i_result)
   }
 }
 
-void ViconDriver::set_settings_vicon()
+ViconDriverNode::ViconDriverNode(const rclcpp::NodeOptions node_options)
+: rclcpp_lifecycle::LifecycleNode("vicon2_driver_node", node_options)
+{
+  declare_parameter<std::string>("stream_mode", "ClientPull");
+  declare_parameter<std::string>("host_name", "192.168.10.1:801");
+  declare_parameter<std::string>("tf_ref_frame_id", "vicon_world");
+  declare_parameter<std::string>("tracked_frame_suffix", "vicon");
+  declare_parameter<bool>("publish_markers", false);
+  declare_parameter<bool>("marker_data_enabled", false);
+  declare_parameter<bool>("unlabeled_marker_data_enabled", false);
+  declare_parameter<int>("lastFrameNumber", 0);
+  declare_parameter<int>("frameCount", 0);
+  declare_parameter<int>("droppedFrameCount", 0);
+  declare_parameter<int>("n_markers", 0);
+  declare_parameter<int>("n_unlabeled_markers", 0);
+  declare_parameter<std::string>("qos_history_policy", "keep_all");
+  declare_parameter<std::string>("qos_reliability_policy", "best_effort");
+  declare_parameter<int>("qos_depth", 10);
+}
+
+void ViconDriverNode::set_settings_vicon()
 {
   ViconDataStreamSDK::CPP::Result::Enum result(ViconDataStreamSDK::CPP::Result::Unknown);
   if (stream_mode_ == "ServerPush") {
@@ -141,10 +162,10 @@ void ViconDriver::set_settings_vicon()
   */
 }
 
-void ViconDriver::start_vicon()
+void ViconDriverNode::start_vicon()
 {
   set_settings_vicon();
-  //rclcpp::WallRate d(1.0 / 240.0);
+  // rclcpp::WallRate d(1.0 / 240.0);
   auto period = std::chrono::milliseconds(100);
   rclcpp::Rate d(period);
   while (rclcpp::ok()) {
@@ -152,12 +173,12 @@ void ViconDriver::start_vicon()
       RCLCPP_WARN(get_logger(), "getFrame returned false");
       d.sleep();
     }
-    //now_time = this->now();
+    // now_time = this->now();
     process_frame();
   }
 }
 
-bool ViconDriver::stop_vicon()
+bool ViconDriverNode::stop_vicon()
 {
   RCLCPP_INFO(get_logger(), "Disconnecting from Vicon DataStream SDK");
   client.Disconnect();
@@ -165,11 +186,11 @@ bool ViconDriver::stop_vicon()
   return true;
 }
 
-void ViconDriver::process_frame()
+void ViconDriverNode::process_frame()
 {
   static rclcpp::Time lastTime;
   ViconDataStreamSDK::CPP::Output_GetFrameNumber OutputFrameNum = client.GetFrameNumber();
-  ViconDataStreamSDK::CPP::Output_GetFrameRate OutputFrameRate = client.GetFrameRate ();
+  ViconDataStreamSDK::CPP::Output_GetFrameRate OutputFrameRate = client.GetFrameRate();
   RCLCPP_WARN(get_logger(), "Frame rate: %f", OutputFrameRate.FrameRateHz);
 
   int frameDiff = 0;
@@ -196,7 +217,7 @@ void ViconDriver::process_frame()
   }
 }
 
-void ViconDriver::process_markers(const rclcpp::Time & frame_time, unsigned int vicon_frame_num)
+void ViconDriverNode::process_markers(const rclcpp::Time & frame_time, unsigned int vicon_frame_num)
 {
   int marker_cnt = 0;
   if (!marker_data_enabled_) {
@@ -253,12 +274,13 @@ void ViconDriver::process_markers(const rclcpp::Time & frame_time, unsigned int 
     }
   }
   if (!marker_pub_->is_activated()) {
-    RCLCPP_WARN(get_logger(), "Lifecycle publisher is currently inactive. Messages are not published.");
+    RCLCPP_WARN(get_logger(),
+      "Lifecycle publisher is currently inactive. Messages are not published.");
   }
   marker_pub_->publish(markers_msg);
 }
 
-void ViconDriver::marker_to_tf(
+void ViconDriverNode::marker_to_tf(
   mocap4ros_msgs::msg::Marker marker,
   int marker_num, const rclcpp::Time & frame_time)
 {
@@ -290,18 +312,14 @@ void ViconDriver::marker_to_tf(
   tf_broadcaster_->sendTransform(transforms);
 }
 
-ViconDriver::ViconDriver(const rclcpp::NodeOptions node_options)
-: rclcpp_lifecycle::LifecycleNode("vicon2_driver_node", node_options)
-{
-  initParameters();
-}
-
 using CallbackReturnT =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 CallbackReturnT
-ViconDriver::on_configure(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_configure(const rclcpp_lifecycle::State & state)
 {
+  initParameters();
+
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
 
@@ -341,7 +359,7 @@ ViconDriver::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 CallbackReturnT
-ViconDriver::on_activate(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
@@ -354,7 +372,7 @@ ViconDriver::on_activate(const rclcpp_lifecycle::State & state)
 }
 
 CallbackReturnT
-ViconDriver::on_deactivate(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
@@ -366,7 +384,7 @@ ViconDriver::on_deactivate(const rclcpp_lifecycle::State & state)
 }
 
 CallbackReturnT
-ViconDriver::on_cleanup(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_cleanup(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
@@ -377,7 +395,7 @@ ViconDriver::on_cleanup(const rclcpp_lifecycle::State & state)
 }
 
 CallbackReturnT
-ViconDriver::on_shutdown(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_shutdown(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
@@ -388,7 +406,7 @@ ViconDriver::on_shutdown(const rclcpp_lifecycle::State & state)
 }
 
 CallbackReturnT
-ViconDriver::on_error(const rclcpp_lifecycle::State & state)
+ViconDriverNode::on_error(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "State id [%d]", get_current_state().id());
   RCLCPP_INFO(get_logger(), "State label [%s]", get_current_state().label().c_str());
@@ -396,7 +414,7 @@ ViconDriver::on_error(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-bool ViconDriver::connect_vicon()
+bool ViconDriverNode::connect_vicon()
 {
   RCLCPP_WARN(get_logger(),
     "Trying to connect to Vicon DataStream SDK at %s ...", host_name_.c_str());
@@ -411,24 +429,8 @@ bool ViconDriver::connect_vicon()
   return client.IsConnected().Connected;
 }
 
-void ViconDriver::initParameters()
+void ViconDriverNode::initParameters()
 {
-  declare_parameter<std::string>("stream_mode", "ClientPull");
-  declare_parameter<std::string>("host_name", "192.168.10.1:801");
-  declare_parameter<std::string>("tf_ref_frame_id", "vicon_world");
-  declare_parameter<std::string>("tracked_frame_suffix", "vicon");
-  declare_parameter<bool>("publish_markers", false);
-  declare_parameter<bool>("marker_data_enabled", false);
-  declare_parameter<bool>("unlabeled_marker_data_enabled", false);
-  declare_parameter<int>("lastFrameNumber", 0);
-  declare_parameter<int>("frameCount", 0);
-  declare_parameter<int>("droppedFrameCount", 0);
-  declare_parameter<int>("n_markers", 0);
-  declare_parameter<int>("n_unlabeled_markers", 0);
-  declare_parameter<std::string>("qos_history_policy", "keep_all");
-  declare_parameter<std::string>("qos_reliability_policy", "best_effort");
-  declare_parameter<int>("qos_depth", 10);
-
   get_parameter<std::string>("stream_mode", stream_mode_);
   get_parameter<std::string>("host_name", host_name_);
   get_parameter<std::string>("tf_ref_frame_id", tf_ref_frame_id_);
@@ -445,34 +447,35 @@ void ViconDriver::initParameters()
   get_parameter<std::string>("qos_reliability_policy", qos_reliability_policy_);
   get_parameter<int>("qos_depth", qos_depth_);
 
-  RCLCPP_WARN(get_logger(),
+
+  RCLCPP_INFO(get_logger(),
     "Param stream_mode: %s", stream_mode_.c_str());
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param host_name: %s", host_name_.c_str());
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param tf_ref_frame_id: %s", tf_ref_frame_id_.c_str());
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param tracked_frame_suffix: %s", tracked_frame_suffix_.c_str());
-  RCLCPP_WARN(get_logger(),
-    "Param publish_markers: %s", publish_markers_?"true":"false");
-  RCLCPP_WARN(get_logger(),
-    "Param marker_data_enabled: %s", marker_data_enabled_?"true":"false");
-  RCLCPP_WARN(get_logger(),
-    "Param unlabeled_marker_data_enabled: %s", unlabeled_marker_data_enabled_?"true":"false");
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
+    "Param publish_markers: %s", publish_markers_ ? "true" : "false");
+  RCLCPP_INFO(get_logger(),
+    "Param marker_data_enabled: %s", marker_data_enabled_ ? "true" : "false");
+  RCLCPP_INFO(get_logger(),
+    "Param unlabeled_marker_data_enabled: %s", unlabeled_marker_data_enabled_ ? "true" : "false");
+  RCLCPP_INFO(get_logger(),
     "Param lastFrameNumber: %d", lastFrameNumber_);
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param frameCount: %d", frameCount_);
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param droppedFrameCount: %d", droppedFrameCount_);
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param n_markers: %d", n_markers_);
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param n_unlabeled_markers: %d", n_unlabeled_markers_);
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param qos_history_policy: %s", qos_history_policy_.c_str());
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param qos_reliability_policy: %s", qos_reliability_policy_.c_str());
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_INFO(get_logger(),
     "Param qos_depth: %d", qos_depth_);
 }

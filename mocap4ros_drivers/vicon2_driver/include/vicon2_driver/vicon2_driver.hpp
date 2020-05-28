@@ -23,6 +23,7 @@
 #include <string>
 #include <memory>
 #include <chrono>
+#include <vector>
 
 #include "rclcpp/time.hpp"
 
@@ -46,16 +47,15 @@
 
 #include "ViconDataStreamSDK/DataStreamClient.h"
 
-class ViconDriver : public rclcpp_lifecycle::LifecycleNode
+class ViconDriverNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-  explicit ViconDriver(const rclcpp::NodeOptions options = 
+  explicit ViconDriverNode(
+    const rclcpp::NodeOptions options =
     rclcpp::NodeOptions().parameter_overrides(
-      std::vector<rclcpp::Parameter>{
-        rclcpp::Parameter("use_sim_time", true)
-      }
-    )
-  );
+      std::vector<rclcpp::Parameter> {
+    rclcpp::Parameter("use_sim_time", true)
+  }));
 
   using CallbackReturnT =
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -72,7 +72,7 @@ public:
   bool stop_vicon();
   void initParameters();
 
-private:
+protected:
   ViconDataStreamSDK::CPP::Client client;
   // rclcpp::Node::SharedPtr vicon_node;
   // std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;

@@ -20,7 +20,6 @@ find_package(mocap4ros_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 set(dependencies
-  ament_index_cpp
   rclcpp
   rclcpp_lifecycle
   tf2
@@ -45,11 +44,7 @@ target_link_libraries(vicon2_driver_main
 )
 
 ament_target_dependencies(vicon2_driver ${dependencies})
-target_link_libraries(vicon2_driver
-  ViconDataStreamSDK_CPP
-#  Boost::system
-#  Boost::thread
-)
+target_link_libraries(vicon2_driver ViconDataStreamSDK_CPP)
 
 install(DIRECTORY include/
   DESTINATION include/
@@ -70,8 +65,16 @@ install(TARGETS
 )
 
 if(BUILD_TESTING)
+
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_index_cpp REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
+
+  ament_add_gtest(test_vicon2_driver test/test_vicon2_driver.cpp)
+  target_link_libraries(test_vicon2_driver ${PROJECT_NAME})
+
 endif()
 
 ament_export_include_directories(include)

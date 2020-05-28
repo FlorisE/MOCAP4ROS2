@@ -40,9 +40,11 @@ from launch_ros.event_handlers import OnStateTransition
 
 import lifecycle_msgs.msg
 
+
 def generate_launch_description():
 
-    params_file_path = os.path.join(get_package_share_directory('vicon2_driver'), 'config', 'vicon2_driver_params.yaml')
+    params_file_path = os.path.join(get_package_share_directory(
+      'vicon2_driver'), 'config', 'vicon2_driver_params.yaml')
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -62,8 +64,8 @@ def generate_launch_description():
     # Make the driver node take the 'configure' transition
     driver_configure_trans_event = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher = launch.events.matchers.matches_action(driver_node),
-            transition_id = lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+            lifecycle_node_matcher=launch.events.matchers.matches_action(driver_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
         )
     )
 
@@ -73,7 +75,7 @@ def generate_launch_description():
     #        lifecycle_node_matcher = launch.events.matchers.matches_action(driver_node),
     #        transition_id = lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
     #     )
-    #)
+    # )
 
     # Create the launch description and populate
     ld = LaunchDescription()
