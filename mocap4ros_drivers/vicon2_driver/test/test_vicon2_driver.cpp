@@ -75,60 +75,59 @@ public:
   int & ref_qos_depth_;
 };
 
-// TEST(UtilsTest, test_vicon2_params)
-// {
-//   auto vicon2_node = std::make_shared<TestViconDriver>();
-//   auto test_node = rclcpp::Node::make_shared("vicon2_test_node");
-//
-//   rclcpp::executors::MultiThreadedExecutor exe(rclcpp::executor::ExecutorArgs(), 4);
-//   exe.add_node(vicon2_node->get_node_base_interface());
-//   exe.add_node(test_node->get_node_base_interface());
-//
-//   auto set_parameters_results = vicon2_node->set_parameters({
-//     rclcpp::Parameter("stream_mode", "ServerPush"),
-//     rclcpp::Parameter("host_name", "123.456.789:123"),
-//     rclcpp::Parameter("tf_ref_frame_id", "my_world"),
-//     rclcpp::Parameter("tracked_frame_suffix", "my_vicon"),
-//     rclcpp::Parameter("publish_markers", true),
-//     rclcpp::Parameter("marker_data_enabled", true),
-//     rclcpp::Parameter("unlabeled_marker_data_enabled", true),
-//     rclcpp::Parameter("lastFrameNumber", 1),
-//     rclcpp::Parameter("frameCount", 2),
-//     rclcpp::Parameter("droppedFrameCount", 3),
-//     rclcpp::Parameter("n_markers", 4),
-//     rclcpp::Parameter("n_unlabeled_markers", 5),
-//     rclcpp::Parameter("qos_history_policy", "keep_last"),
-//     rclcpp::Parameter("qos_reliability_policy", "reliable"),
-//     rclcpp::Parameter("qos_depth", 6),
-//   });
-//
-//   vicon2_node->trigger_transition(rclcpp_lifecycle::Transition(
-//       Transition::TRANSITION_CONFIGURE));
-//   exe.spin_some();
-//
-//   EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, vicon2_node->get_current_state().id());
-//
-//   vicon2_node->trigger_transition(rclcpp_lifecycle::Transition(
-//       Transition::TRANSITION_ACTIVATE));
-//
-//   ASSERT_EQ(vicon2_node->ref_stream_mode_, "ServerPush");
-//   ASSERT_EQ(vicon2_node->ref_host_name_, "123.456.789:123");
-//   ASSERT_EQ(vicon2_node->ref_tf_ref_frame_id_, "my_world");
-//   ASSERT_EQ(vicon2_node->ref_tracked_frame_suffix_, "my_vicon");
-//   ASSERT_EQ(vicon2_node->ref_publish_markers_, true);
-//   ASSERT_EQ(vicon2_node->ref_marker_data_enabled_, true);
-//   ASSERT_EQ(vicon2_node->ref_unlabeled_marker_data_enabled_, true);
-//   ASSERT_EQ(vicon2_node->ref_lastFrameNumber_, 1);
-//   ASSERT_EQ(vicon2_node->ref_frameCount_, 2);
-//   ASSERT_EQ(vicon2_node->ref_droppedFrameCount_, 3);
-//   ASSERT_EQ(vicon2_node->ref_n_markers_, 4);
-//   ASSERT_EQ(vicon2_node->ref_n_unlabeled_markers_, 5);
-//   ASSERT_EQ(vicon2_node->ref_qos_history_policy_, "keep_last");
-//   ASSERT_EQ(vicon2_node->ref_qos_reliability_policy_, "reliable");
-//   ASSERT_EQ(vicon2_node->ref_qos_depth_, 6);
-// }
+TEST(UtilsTest, test_vicon2_params)
+{
+  auto vicon2_node = std::make_shared<TestViconDriver>();
+  auto test_node = rclcpp::Node::make_shared("vicon2_test_node");
 
-// ToDo (fmrico): Lorena, add a test for each method/function
+  rclcpp::executors::MultiThreadedExecutor exe(rclcpp::executor::ExecutorArgs(), 4);
+  exe.add_node(vicon2_node->get_node_base_interface());
+  exe.add_node(test_node->get_node_base_interface());
+
+  auto set_parameters_results = vicon2_node->set_parameters({
+    rclcpp::Parameter("stream_mode", "ServerPush"),
+    rclcpp::Parameter("host_name", "123.456.789:123"),
+    rclcpp::Parameter("tf_ref_frame_id", "my_world"),
+    rclcpp::Parameter("tracked_frame_suffix", "my_vicon"),
+    rclcpp::Parameter("publish_markers", true),
+    rclcpp::Parameter("marker_data_enabled", true),
+    rclcpp::Parameter("unlabeled_marker_data_enabled", true),
+    rclcpp::Parameter("lastFrameNumber", 1),
+    rclcpp::Parameter("frameCount", 2),
+    rclcpp::Parameter("droppedFrameCount", 3),
+    rclcpp::Parameter("n_markers", 4),
+    rclcpp::Parameter("n_unlabeled_markers", 5),
+    rclcpp::Parameter("qos_history_policy", "keep_last"),
+    rclcpp::Parameter("qos_reliability_policy", "reliable"),
+    rclcpp::Parameter("qos_depth", 6),
+  });
+
+  vicon2_node->trigger_transition(rclcpp_lifecycle::Transition(
+      Transition::TRANSITION_CONFIGURE));
+  exe.spin_some();
+
+  EXPECT_EQ(State::PRIMARY_STATE_INACTIVE, vicon2_node->get_current_state().id());
+
+  vicon2_node->trigger_transition(rclcpp_lifecycle::Transition(
+      Transition::TRANSITION_ACTIVATE));
+
+  ASSERT_EQ(vicon2_node->ref_stream_mode_, "ServerPush");
+  ASSERT_EQ(vicon2_node->ref_host_name_, "123.456.789:123");
+  ASSERT_EQ(vicon2_node->ref_tf_ref_frame_id_, "my_world");
+  ASSERT_EQ(vicon2_node->ref_tracked_frame_suffix_, "my_vicon");
+  ASSERT_EQ(vicon2_node->ref_publish_markers_, true);
+  ASSERT_EQ(vicon2_node->ref_marker_data_enabled_, true);
+  ASSERT_EQ(vicon2_node->ref_unlabeled_marker_data_enabled_, true);
+  ASSERT_EQ(vicon2_node->ref_lastFrameNumber_, 1);
+  ASSERT_EQ(vicon2_node->ref_frameCount_, 2);
+  ASSERT_EQ(vicon2_node->ref_droppedFrameCount_, 3);
+  ASSERT_EQ(vicon2_node->ref_n_markers_, 4);
+  ASSERT_EQ(vicon2_node->ref_n_unlabeled_markers_, 5);
+  ASSERT_EQ(vicon2_node->ref_qos_history_policy_, "keep_last");
+  ASSERT_EQ(vicon2_node->ref_qos_reliability_policy_, "reliable");
+  ASSERT_EQ(vicon2_node->ref_qos_depth_, 6);
+}
+
 
 int main(int argc, char * argv[])
 {
