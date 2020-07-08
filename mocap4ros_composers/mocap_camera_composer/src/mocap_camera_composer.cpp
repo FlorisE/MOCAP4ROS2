@@ -31,9 +31,10 @@ void MocapCameraComposer::start_composer()
   marker_sub_ = camera_composer_node->create_subscription<mocap4ros_msgs::msg::Markers>(
     tracked_frame_suffix_ + "/markers",
     100,
-    std::bind(&MocapCameraComposer::marker_to_tf,
-    this,
-    _1));
+    std::bind(
+      &MocapCameraComposer::marker_to_tf,
+      this,
+      _1));
 }
 
 /* void MocapCameraComposer::marker_to_tf(
@@ -50,9 +51,11 @@ void MocapCameraComposer::marker_to_tf(const mocap4ros_msgs::msg::Markers::Share
     // RCLCPP_INFO(camera_composer_node->get_logger(), "marker name %s", marker.marker_name);
     marker_id++;
     tf2::Transform transform;
-    transform.setOrigin(tf2::Vector3(marker.translation.x / 1000,
-      marker.translation.y / 1000,
-      marker.translation.z / 1000)
+    transform.setOrigin(
+      tf2::Vector3(
+        marker.translation.x / 1000,
+        marker.translation.y / 1000,
+        marker.translation.z / 1000)
     );
     transform.setRotation(tf2::Quaternion(0, 0, 0, 1));
     tracked_frame = tracked_frame_suffix_ + "/tf_marker_" + std::to_string(marker_id);

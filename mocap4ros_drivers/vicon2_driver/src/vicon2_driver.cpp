@@ -127,27 +127,32 @@ void ViconDriverNode::set_settings_vicon()
     rclcpp::shutdown();
   }
 
-  RCLCPP_INFO(get_logger(), "Setting Stream Mode to %s : %s",
+  RCLCPP_INFO(
+    get_logger(), "Setting Stream Mode to %s : %s",
     stream_mode_.c_str(), Enum2String(result).c_str());
 
-  client.SetAxisMapping(ViconDataStreamSDK::CPP::Direction::Forward,
+  client.SetAxisMapping(
+    ViconDataStreamSDK::CPP::Direction::Forward,
     ViconDataStreamSDK::CPP::Direction::Left, ViconDataStreamSDK::CPP::Direction::Up);
   ViconDataStreamSDK::CPP::Output_GetAxisMapping _Output_GetAxisMapping = client.GetAxisMapping();
 
-  RCLCPP_INFO(get_logger(), "Axis Mapping: X-%s Y-%s Z-%s",
+  RCLCPP_INFO(
+    get_logger(),
+    "Axis Mapping: X-%s Y-%s Z-%s",
     Enum2String(_Output_GetAxisMapping.XAxis).c_str(),
     Enum2String(_Output_GetAxisMapping.YAxis).c_str(),
     Enum2String(_Output_GetAxisMapping.ZAxis).c_str());
 
   client.EnableSegmentData();
 
-  RCLCPP_INFO(get_logger(),
-    "IsSegmentDataEnabled? %s",
+  RCLCPP_INFO(
+    get_logger(), "IsSegmentDataEnabled? %s",
     client.IsSegmentDataEnabled().Enabled ? "true" : "false");
 
   ViconDataStreamSDK::CPP::Output_GetVersion _Output_GetVersion = client.GetVersion();
 
-  RCLCPP_INFO(get_logger(), "Version: %d.%d.%d",
+  RCLCPP_INFO(
+    get_logger(), "Version: %d.%d.%d",
     _Output_GetVersion.Major,
     _Output_GetVersion.Minor,
     _Output_GetVersion.Point
@@ -201,7 +206,8 @@ void ViconDriverNode::process_frame()
       droppedFrameCount_ += frameDiff;
       double droppedFramePct = static_cast<double>(droppedFrameCount_ / frameCount_ * 100);
 
-      RCLCPP_DEBUG(get_logger(),
+      RCLCPP_DEBUG(
+        get_logger(),
         "%d more (total %d / %d, %f %%) frame(s) dropped. Consider adjusting rates",
         frameDiff, droppedFrameCount_, frameCount_, droppedFramePct);
     }
@@ -224,16 +230,16 @@ void ViconDriverNode::process_markers(const rclcpp::Time & frame_time, unsigned 
     marker_data_enabled_ = true;
     client.EnableMarkerData();
 
-    RCLCPP_INFO(get_logger(),
-      "IsMarkerDataEnabled? %s",
+    RCLCPP_INFO(
+      get_logger(), "IsMarkerDataEnabled? %s",
       client.IsMarkerDataEnabled().Enabled ? "true" : "false");
   }
   if (!unlabeled_marker_data_enabled_) {
     unlabeled_marker_data_enabled_ = true;
     client.EnableUnlabeledMarkerData();
 
-    RCLCPP_INFO(get_logger(),
-      "IsUnlabeledMarkerDataEnabled? %s",
+    RCLCPP_INFO(
+      get_logger(), "IsUnlabeledMarkerDataEnabled? %s",
       client.IsUnlabeledMarkerDataEnabled().Enabled ? "true" : "false");
   }
   n_markers_ = 0;
@@ -242,7 +248,8 @@ void ViconDriverNode::process_markers(const rclcpp::Time & frame_time, unsigned 
   markers_msg.frame_number = vicon_frame_num;
   unsigned int UnlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
 
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "# unlabeled markers: %d", UnlabeledMarkerCount);
   n_markers_ += UnlabeledMarkerCount;
   n_unlabeled_markers_ = UnlabeledMarkerCount;
@@ -268,13 +275,15 @@ void ViconDriverNode::process_markers(const rclcpp::Time & frame_time, unsigned 
       marker_to_tf(this_marker, marker_cnt, frame_time);
       marker_cnt++;
     } else {
-      RCLCPP_WARN(get_logger(),
+      RCLCPP_WARN(
+        get_logger(),
         "GetUnlabeledMarkerGlobalTranslation failed (result = %s)",
         Enum2String(_Output_GetUnlabeledMarkerGlobalTranslation.Result).c_str());
     }
   }
   if (!marker_pub_->is_activated()) {
-    RCLCPP_WARN(get_logger(),
+    RCLCPP_WARN(
+      get_logger(),
       "Lifecycle publisher is currently inactive. Messages are not published.");
   }
   marker_pub_->publish(markers_msg);
@@ -289,9 +298,12 @@ void ViconDriverNode::marker_to_tf(
   string tracked_frame;
   geometry_msgs::msg::TransformStamped tf_msg;
 
-  transform.setOrigin(tf2::Vector3(marker.translation.x / 1000,
-    marker.translation.y / 1000,
-    marker.translation.z / 1000));
+  transform.setOrigin(
+    tf2::Vector3(
+      marker.translation.x / 1000,
+      marker.translation.y / 1000,
+      marker.translation.z / 1000));
+
   transform.setRotation(tf2::Quaternion(0, 0, 0, 1));
   stringstream marker_num_str;
   marker_num_str << marker_num;
@@ -416,7 +428,8 @@ ViconDriverNode::on_error(const rclcpp_lifecycle::State & state)
 
 bool ViconDriverNode::connect_vicon()
 {
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_WARN(
+    get_logger(),
     "Trying to connect to Vicon DataStream SDK at %s ...", host_name_.c_str());
 
   if (client.Connect(host_name_).Result == ViconDataStreamSDK::CPP::Result::Success) {
@@ -448,34 +461,49 @@ void ViconDriverNode::initParameters()
   get_parameter<int>("qos_depth", qos_depth_);
 
 
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param stream_mode: %s", stream_mode_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param host_name: %s", host_name_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param tf_ref_frame_id: %s", tf_ref_frame_id_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param tracked_frame_suffix: %s", tracked_frame_suffix_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param publish_markers: %s", publish_markers_ ? "true" : "false");
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param marker_data_enabled: %s", marker_data_enabled_ ? "true" : "false");
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param unlabeled_marker_data_enabled: %s", unlabeled_marker_data_enabled_ ? "true" : "false");
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param lastFrameNumber: %d", lastFrameNumber_);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param frameCount: %d", frameCount_);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param droppedFrameCount: %d", droppedFrameCount_);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param n_markers: %d", n_markers_);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param n_unlabeled_markers: %d", n_unlabeled_markers_);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param qos_history_policy: %s", qos_history_policy_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param qos_reliability_policy: %s", qos_reliability_policy_.c_str());
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(
+    get_logger(),
     "Param qos_depth: %d", qos_depth_);
 }

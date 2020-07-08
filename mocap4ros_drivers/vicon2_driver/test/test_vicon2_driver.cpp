@@ -128,7 +128,6 @@ TEST(UtilsTest, test_vicon2_params)
   ASSERT_EQ(vicon2_node->ref_qos_depth_, 6);
 }
 
-// ToDo (fmrico): Lorena, add a test for each method/function
 
 int main(int argc, char * argv[])
 {
